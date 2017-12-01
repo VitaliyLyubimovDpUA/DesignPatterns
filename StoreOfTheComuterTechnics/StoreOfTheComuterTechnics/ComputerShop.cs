@@ -9,7 +9,7 @@ namespace StoreOfTheComuterTechnics
 {
     public enum CompType
     {
-        Apple, Desctop, Laptop
+        Apple, Desktop, Laptop
     }
     public class ComputerShop
     {
@@ -23,6 +23,12 @@ namespace StoreOfTheComuterTechnics
                 {
                     case CompType.Apple:
                         builder = new Computer.AppleBuilder();
+                        break;
+                    case CompType.Desktop:
+                        builder = new Computer.DesktopBuilder();
+                        break;
+                    case CompType.Laptop:
+                        builder = new Computer.LaptopBuilder();
                         break;
                     default:
                         break;

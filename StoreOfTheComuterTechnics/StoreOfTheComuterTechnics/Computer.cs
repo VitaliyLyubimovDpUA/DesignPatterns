@@ -51,5 +51,67 @@ namespace StoreOfTheComuterTechnics
                 return this;
             }
         }
+
+        public class DesktopBuilder : IComputerBuilder
+        {
+            private Computer computer = new Computer();
+
+            public Computer Build() => computer;
+
+            public IComputerBuilder BuildHardDisk(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+
+            public IComputerBuilder BuildMotherBoard(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+
+            public IComputerBuilder BuildProcessor(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+
+            public IComputerBuilder BuildScreen(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+        }
+
+        public class LaptopBuilder : IComputerBuilder
+        {
+            private Computer computer = new Computer();
+
+            public Computer Build() => computer;
+
+            public IComputerBuilder BuildHardDisk(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+
+            public IComputerBuilder BuildMotherBoard(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+
+            public IComputerBuilder BuildProcessor(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+
+            public IComputerBuilder BuildScreen(IComponent component)
+            {
+                computer.components.Add(component);
+                return this;
+            }
+        }
     }
 }
