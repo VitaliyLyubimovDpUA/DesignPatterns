@@ -19,5 +19,9 @@ namespace ProductsStoreOfPrototypePattern
                 Price = this.Price
             };
         }
+        public override string ToString()
+        {
+            return $"{Name} {Price}{Supermarket.Currency.ToString()}";
+        }
     }
 }

@@ -6,8 +6,14 @@ using System.Threading.Tasks;
 
 namespace ProductsStoreOfPrototypePattern
 {
+    public enum PaymentCurrency
+    {
+        uah, usd, eur
+    }
+
     public class Supermarket
     {
+        public static PaymentCurrency Currency = PaymentCurrency.uah;
         private List<IProduct> products;
         public Supermarket()
         {
@@ -39,5 +45,12 @@ namespace ProductsStoreOfPrototypePattern
             return product.Clone();
         }
 
+        public void ShowProducts()
+        {
+            foreach (var item in products)
+            {
+                Console.WriteLine(item);
+            }
+        }
     }
 }
