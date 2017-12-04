@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -30,11 +30,52 @@ namespace PatternBridge
         public virtual void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) { }
     }
 
-    public interface LoggerImpl
+    public abstract class LoggerImpl
     {
-        void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0);
-        void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0);
-        void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0);
+        static string template = "";
+        static LoggerImpl()
+        {
+            template = ConfigurationManager.AppSettings["writeTemplate"];
+        }
+        private string MsgToSendText(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            return template.Replace("%T", lvl.ToString())
+                                  .Replace("%D", DateTime.Now.ToShortDateString())
+                                  .Replace("%t", DateTime.Now.ToShortTimeString())
+                                  .Replace("%F", sourceFilePath)
+                                  .Replace("%l", sourceLineNumber.ToString())
+                                  .Replace("%m", msg + "\r\n");
+        }
+        public virtual void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            lock (this)
+            {
+                Console.WriteLine(MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
+            }
+        }
+        public virtual void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            string outputFilePath = ConfigurationManager.AppSettings["outputFilePath"];
+            lock (this)
+            {
+                File.AppendAllText(outputFilePath, MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
+            }
+        }
+        public virtual void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            MailAddress from = new MailAddress(ConfigurationManager.AppSettings["fromEmail"], ConfigurationManager.AppSettings["fromName"]);
+            MailAddress to = new MailAddress(ConfigurationManager.AppSettings["toEmail"]);
+            MailMessage message = new MailMessage(from, to);
+            lock (this)
+            {
+                message.Body = MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber);
+                message.Subject = ConfigurationManager.AppSettings["subject"];
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+                smtp.Credentials = new NetworkCredential(from.Address, ConfigurationManager.AppSettings["fromPassword"]);
+                smtp.EnableSsl = true;
+                smtp.Send(message);
+            }
+        }
     }
 
     public class ConsoleLogger : Logger
@@ -92,44 +133,17 @@ namespace PatternBridge
         {
             template = ConfigurationManager.AppSettings["writeTemplate"];
         }
-        private string MsgToSendText(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public override void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
-            return template.Replace("%T", lvl.ToString())
-                                  .Replace("%D", DateTime.Now.ToShortDateString())
-                                  .Replace("%t", DateTime.Now.ToShortTimeString())
-                                  .Replace("%F", sourceFilePath)
-                                  .Replace("%l", sourceLineNumber.ToString())
-                                  .Replace("%m", msg + "\r\n");
+            base.ConsoleLog(msg, lvl, sourceFilePath, sourceLineNumber);
         }
-        public void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public override void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
-            lock (this)
-            {
-                Console.WriteLine(MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
-            }
+            base.FileLog(msg, lvl, sourceFilePath, sourceLineNumber);
         }
-        public void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public override void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
-            string outputFilePath = ConfigurationManager.AppSettings["outputFilePath"];
-            lock (this)
-            {
-                File.AppendAllText(outputFilePath, MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
-            }
-        }
-        public void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-        {
-            MailAddress from = new MailAddress(ConfigurationManager.AppSettings["fromEmail"], ConfigurationManager.AppSettings["fromName"]);
-            MailAddress to = new MailAddress(ConfigurationManager.AppSettings["toEmail"]);
-            MailMessage message = new MailMessage(from, to);
-            lock (this)
-            {
-                message.Body = MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber);
-                message.Subject = ConfigurationManager.AppSettings["subject"];
-                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
-                smtp.Credentials = new NetworkCredential(from.Address, ConfigurationManager.AppSettings["fromPassword"]);
-                smtp.EnableSsl = true;
-                smtp.Send(message);
-            }
+            base.SocketLog(msg, lvl, sourceFilePath, sourceLineNumber);
         }
     }
 
