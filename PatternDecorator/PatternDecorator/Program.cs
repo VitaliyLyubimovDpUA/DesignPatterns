@@ -47,15 +47,24 @@ namespace PatternDecorator
 
     class CheeseToppings : ToppingDecorator
     {
-        public CheeseToppings(Pizza pizza) : base(pizza, $"{pizza.Name}, с сыром") { }
+        public CheeseToppings(Pizza pizza) : base(pizza, $"{pizza.Name}, с сыром")
+        {
+            pizza.Price = 79.20m;
+        }
     }
-    class ChickenToppings
+    class ChickenToppings : ToppingDecorator
     {
-
+        public ChickenToppings(Pizza pizza) : base(pizza, $"{pizza.Name}, с курицей")
+        {
+            pizza.Price = 102.60m;
+        }
     }
-    class MushroomsToppings
+    class MushroomsToppings : ToppingDecorator
     {
-
+        public MushroomsToppings(Pizza pizza) : base(pizza, $"{pizza.Name}, с грибами")
+        {
+            pizza.Price = 107.90m;
+        }
     }
 
 
@@ -65,13 +74,18 @@ namespace PatternDecorator
         static void Main(string[] args)
         {
             
-            Pizza pizza = new PlainPizza();
-            pizza = new CheeseToppings(pizza);
-            Console.WriteLine(pizza);
-                        
+            Pizza pizzaСheese = new PlainPizza();
+            pizzaСheese = new CheeseToppings(pizzaСheese);
+            Console.WriteLine(pizzaСheese);
 
+            Pizza pizzaChicken = new PlainPizza();
+            pizzaChicken = new ChickenToppings(pizzaChicken);
+            Console.WriteLine(pizzaChicken);
 
-            Console.WriteLine();
+            Pizza pizzaMushrooms = new PlainPizza();
+            pizzaMushrooms = new MushroomsToppings(pizzaMushrooms);
+            Console.WriteLine(pizzaMushrooms);
+
             Console.ReadLine();
         }
     }
