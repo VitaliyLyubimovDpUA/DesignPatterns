@@ -23,72 +23,17 @@ namespace PatternBridge
             this.implementator = implementator;
         }
 
-        public virtual void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) {}
+        public virtual void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) { }
         public virtual void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) { }
         public virtual void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) { }
         public virtual void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) { }
         public virtual void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) { }
     }
 
-    public interface LoggerImpl
+    public abstract class LoggerImpl
     {
-        void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0);
-        void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0);
-        void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0);
-    }
-
-    public class ConsoleLogger : Logger
-    {
-        public ConsoleLogger(LoggerImpl implementator) 
-            : base(implementator) { }
-        public override void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.ConsoleLog(msg, Level.Debug, sourceFilePath, sourceLineNumber);
-        public override void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.ConsoleLog(msg, Level.Warning, sourceFilePath, sourceLineNumber);
-        public override void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.ConsoleLog(msg, Level.Info, sourceFilePath, sourceLineNumber);
-        public override void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.ConsoleLog(msg, Level.Error, sourceFilePath, sourceLineNumber);
-        public override void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.ConsoleLog(msg, Level.Verbose, sourceFilePath, sourceLineNumber);
-    }
-
-    public class FileLogger : Logger
-    {
-        public FileLogger(LoggerImpl implementator) 
-            : base(implementator) { }
-        public override void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.FileLog(msg, Level.Debug);
-        public override void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.FileLog(msg, Level.Warning);
-        public override void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.FileLog(msg, Level.Info);
-        public override void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.FileLog(msg, Level.Error);
-        public override void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.FileLog(msg, Level.Verbose);
-    }
-
-    public class SocketLogger : Logger
-    {
-        public SocketLogger(LoggerImpl implementator)
-            : base(implementator) { }
-        public override void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.SocketLog(msg, Level.Debug);
-        public override void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.SocketLog(msg, Level.Warning);
-        public override void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.SocketLog(msg, Level.Info);
-        public override void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0) 
-            => implementator.SocketLog(msg, Level.Error);
-        public override void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-            => implementator.SocketLog(msg, Level.Verbose);
-    }
-
-    public class ST_LoggerImpl : LoggerImpl
-    {
-        string template = "";
-        public ST_LoggerImpl()
+        static string template = "";
+        static LoggerImpl()
         {
             template = ConfigurationManager.AppSettings["writeTemplate"];
         }
@@ -101,14 +46,11 @@ namespace PatternBridge
                                   .Replace("%l", sourceLineNumber.ToString())
                                   .Replace("%m", msg + "\r\n");
         }
-        public void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public virtual void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
-            lock (this)
-            {
-                Console.WriteLine(MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
-            }
+            Console.WriteLine(MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
         }
-        public void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public virtual void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             string outputFilePath = ConfigurationManager.AppSettings["outputFilePath"];
             lock (this)
@@ -116,7 +58,7 @@ namespace PatternBridge
                 File.AppendAllText(outputFilePath, MsgToSendText(msg, lvl, sourceFilePath, sourceLineNumber));
             }
         }
-        public void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public virtual void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             MailAddress from = new MailAddress(ConfigurationManager.AppSettings["fromEmail"], ConfigurationManager.AppSettings["fromName"]);
             MailAddress to = new MailAddress(ConfigurationManager.AppSettings["toEmail"]);
@@ -133,34 +75,118 @@ namespace PatternBridge
         }
     }
 
-    //public class MT_LoggerImpl : LoggerImpl
-    //{
-    //    public void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
-    //    {
-    //        Console.WriteLine("MT Console log");
-    //    }
-    //    public void FileLog(string msg, Level lvl)
-    //    {
-    //        Console.WriteLine("MT File log");
-    //    }
-    //    public void SocketLog(string msg, Level lvl)
-    //    {
-    //        Console.WriteLine("MT Socket log");
-    //    }
-    //}
+    public class ConsoleLogger : Logger
+    {
+        public ConsoleLogger(LoggerImpl implementator)
+            : base(implementator) { }
+        public override void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.ConsoleLog(msg, Level.Debug, sourceFilePath, sourceLineNumber);
+        public override void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.ConsoleLog(msg, Level.Warning, sourceFilePath, sourceLineNumber);
+        public override void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.ConsoleLog(msg, Level.Info, sourceFilePath, sourceLineNumber);
+        public override void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.ConsoleLog(msg, Level.Error, sourceFilePath, sourceLineNumber);
+        public override void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.ConsoleLog(msg, Level.Verbose, sourceFilePath, sourceLineNumber);
+    }
+
+    public class FileLogger : Logger
+    {
+        public FileLogger(LoggerImpl implementator)
+            : base(implementator) { }
+        public override void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.FileLog(msg, Level.Debug);
+        public override void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.FileLog(msg, Level.Warning);
+        public override void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.FileLog(msg, Level.Info);
+        public override void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.FileLog(msg, Level.Error);
+        public override void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.FileLog(msg, Level.Verbose);
+    }
+
+    public class SocketLogger : Logger
+    {
+        public SocketLogger(LoggerImpl implementator)
+            : base(implementator) { }
+        public override void Debug(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.SocketLog(msg, Level.Debug);
+        public override void Warning(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.SocketLog(msg, Level.Warning);
+        public override void Info(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.SocketLog(msg, Level.Info);
+        public override void Error(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.SocketLog(msg, Level.Error);
+        public override void Verbose(string msg, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+            => implementator.SocketLog(msg, Level.Verbose);
+    }
+
+    public class ST_LoggerImpl : LoggerImpl
+    {
+        public override void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            base.ConsoleLog(msg, lvl, sourceFilePath, sourceLineNumber);
+        }
+        public override void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            base.FileLog(msg, lvl, sourceFilePath, sourceLineNumber);
+        }
+        public override void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            base.SocketLog(msg, lvl, sourceFilePath, sourceLineNumber);
+        }
+    }
+
+    public class MT_LoggerImpl : LoggerImpl
+    {
+        public override void ConsoleLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            lock (this)
+            {
+                base.ConsoleLog(msg, lvl, sourceFilePath, sourceLineNumber);
+            }
+        }
+        public override void FileLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            lock(this)
+            {
+                base.FileLog(msg, lvl, sourceFilePath, sourceLineNumber);
+            }
+        }
+        public override void SocketLog(string msg, Level lvl, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        {
+            lock(this)
+            {
+                base.SocketLog(msg, lvl, sourceFilePath, sourceLineNumber);
+            }
+        }
+    }
 
     class Program
     {
         static void Main(string[] args)
         {
-            Logger consoleLogger = new ConsoleLogger(new ST_LoggerImpl());
-            consoleLogger.Info("Good evening");
+            //-= ST Loggers =-
+            //Logger consoleLogger = new ConsoleLogger(new ST_LoggerImpl());
+            //consoleLogger.Info("Good evening");
 
-            Logger fileLogger = new FileLogger(new ST_LoggerImpl());
-            fileLogger.Verbose("Some text");
+            //Logger fileLogger = new FileLogger(new ST_LoggerImpl());
+            //fileLogger.Verbose("Some text");
 
             //Logger socketLogger = new SocketLogger(new ST_LoggerImpl());
             //socketLogger.Debug("");
+
+            // -= MT Loggers =-
+            Logger consoleLogger = new ConsoleLogger(new MT_LoggerImpl());
+            consoleLogger.Info("Good evening");
+
+            Logger fileLogger = new FileLogger(new MT_LoggerImpl());
+            fileLogger.Verbose("Some text");
+
+            Logger socketLogger = new SocketLogger(new MT_LoggerImpl());
+            socketLogger.Debug("");
 
 
 
