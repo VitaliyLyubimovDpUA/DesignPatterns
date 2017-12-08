@@ -33,6 +33,26 @@ namespace ChainOf_Responsibility
         }
     }
 
+
+    class TransactionInfo
+    {
+        public List<int> Notes { get; set; } = new List<int>();
+        public int TotalMoney { get; set; }
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            var dist = Notes.Distinct();
+            foreach (var item in dist)
+            {
+                int count = Notes.Where(val => val == item).Count();
+                builder.Append($"\t{item}-x{count}\n");
+            }
+            builder.Append($"\tИтого: ${TotalMoney}\n");
+            return builder.ToString();
+        }
+    }
+
+
     class ATM /* automated teller machine - банкомат */
     {
         /// <summary>
@@ -41,6 +61,8 @@ namespace ChainOf_Responsibility
         /// </summary>
         private INote maxNote;             //самая большая купюра в банкомате
         private INote minNote;             //самая маленькая купюра в банкомате
+        private List<TransactionInfo> transactions = new List<TransactionInfo>();
+        
         public ATM()
         {
 
@@ -49,7 +71,7 @@ namespace ChainOf_Responsibility
             INote note5 = new Note(CurrencyType.UAH, 5, null);
             INote note10 = new Note(CurrencyType.UAH, 10, note5);
             INote note20 = new Note(CurrencyType.UAH, 20, note10);
-            INote note50 = new Note(CurrencyType.UAH, 500, note20);
+            INote note50 = new Note(CurrencyType.UAH, 50, note20);
             INote note100 = new Note(CurrencyType.UAH, 100, note50);
             INote note200 = new Note(CurrencyType.UAH, 200, note100);
             INote note500 = new Note(CurrencyType.UAH, 500, note200);
@@ -58,32 +80,31 @@ namespace ChainOf_Responsibility
             maxNote = note500;
         }
         //Выдача наличных
-        public bool CashWithdrawal(int money)
+        public bool CashWithdrawal(int money, bool isCheckingCash = false)
         {
             //Выбор наибольшей доступной купюры, которая есть в наличии
-           
-
-
-            //while (total != 0 || (pair.Key.Value != minNote && pair.Value != 0))
-            //{
-            //    if (pair.Key.Value == minNote && pair.Value == 0) break;
-            //    if (pair.Value > 0 && total > pair.Key.Value)
-            //    {
-            //        total -= pair.Key.Value;
-            //        currency[pair.Key] = pair.Value - 1;
-            //        pair = currency.Where(item => item.Key.Value == pair.Key.Value).First();
-            //    }
-            //    else {
-            //        if (pair.Key.JuniorNote != null)
-            //            pair = currency.Where(item => item.Key.Value == pair.Key.JuniorNote.Value).First();
-            //        else
-            //            return false;
-            //    }
-            //}
-
-
+            var note = maxNote;
+            var total = money;
+            TransactionInfo transaction = new TransactionInfo { TotalMoney = money };
+            while(note != null)
+            {
+                if (note.TotalQuantity > 0 && note.Value <= total)
+                {
+                    if (!isCheckingCash)
+                    {
+                        total -= note.Value;
+                        note.TotalQuantity--;
+                        transaction.Notes.Add(note.Value);
+                    }
+                }
+                if (note.Value > total || note.TotalQuantity == 0) note = note.JuniorNote;
+            }
+            if (total > 0) throw new Exception("В банкомате не хватает денег");
+            transactions.Add(transaction);
             return true;
         }
+
+        public TransactionInfo GetLastTransaction() => transactions.Last();
     }
 
     class Program
@@ -92,8 +113,15 @@ namespace ChainOf_Responsibility
         {
             ATM atm = new ATM();
 
-            bool isCashWithdrawal = atm.CashWithdrawal(153);
+            bool isCashWithdrawal = atm.CashWithdrawal(1350);
 
+            if (isCashWithdrawal)
+            {
+                var transaction = atm.GetLastTransaction();
+                Console.WriteLine("Информация о выданных купюрах:");
+                Console.WriteLine(transaction);
+            }
+        
             Console.Read();
         }
     }
