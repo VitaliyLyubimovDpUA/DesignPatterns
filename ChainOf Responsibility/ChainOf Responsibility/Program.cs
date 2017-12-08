@@ -18,7 +18,7 @@ namespace ChainOf_Responsibility
         int TotalQuantity { get; set; }
     }
 
-    class Note: INote
+    class Note : INote
     {
         public INote JuniorNote { get; set; }
         public CurrencyType Currency { get; set; }
@@ -45,9 +45,9 @@ namespace ChainOf_Responsibility
             foreach (var item in dist)
             {
                 int count = Notes.Where(val => val == item).Count();
-                builder.Append($"\t{item}-x{count}\n");
+                builder.Append($"   {item}-x{count}\n");
             }
-            builder.Append($"\tИтого: ${TotalMoney}\n");
+            builder.Append($"   Итого: ${TotalMoney}\n");
             return builder.ToString();
         }
     }
@@ -55,14 +55,10 @@ namespace ChainOf_Responsibility
 
     class ATM /* automated teller machine - банкомат */
     {
-        /// <summary>
-        /// INote - купюра
-        /// int - количество купюр
-        /// </summary>
         private INote maxNote;             //самая большая купюра в банкомате
         private INote minNote;             //самая маленькая купюра в банкомате
-        private List<TransactionInfo> transactions = new List<TransactionInfo>();
-        
+        private List<TransactionInfo> transactions = new List<TransactionInfo>();   //список обработанных транзакций
+
         public ATM()
         {
 
@@ -80,22 +76,20 @@ namespace ChainOf_Responsibility
             maxNote = note500;
         }
         //Выдача наличных
-        public bool CashWithdrawal(int money, bool isCheckingCash = false)
+        public bool CashWithdrawal(int money)
         {
+            if (money <= 0) throw new Exception("Не верное количество денег");
             //Выбор наибольшей доступной купюры, которая есть в наличии
             var note = maxNote;
             var total = money;
             TransactionInfo transaction = new TransactionInfo { TotalMoney = money };
-            while(note != null)
+            while (note != null)
             {
                 if (note.TotalQuantity > 0 && note.Value <= total)
                 {
-                    if (!isCheckingCash)
-                    {
-                        total -= note.Value;
-                        note.TotalQuantity--;
-                        transaction.Notes.Add(note.Value);
-                    }
+                    total -= note.Value;
+                    note.TotalQuantity--;
+                    transaction.Notes.Add(note.Value);
                 }
                 if (note.Value > total || note.TotalQuantity == 0) note = note.JuniorNote;
             }
@@ -105,6 +99,8 @@ namespace ChainOf_Responsibility
         }
 
         public TransactionInfo GetLastTransaction() => transactions.Last();
+
+        public int MinWithdrawal() => minNote.Value;
     }
 
     class Program
@@ -112,16 +108,23 @@ namespace ChainOf_Responsibility
         static void Main(string[] args)
         {
             ATM atm = new ATM();
+            int minWithdrawal = atm.MinWithdrawal();
+            Console.WriteLine($"-= Минимальная сумма снятия = {minWithdrawal} =-");
+            int money;
+            Console.WriteLine("Сколько денег снять?");
+            int.TryParse(Console.ReadLine(), out money);
 
-            bool isCashWithdrawal = atm.CashWithdrawal(1350);
+            if (money < minWithdrawal || money % minWithdrawal != 0) throw new Exception("Недопустимая сумма для снятия");
 
+            bool isCashWithdrawal = atm.CashWithdrawal(money);
             if (isCashWithdrawal)
             {
                 var transaction = atm.GetLastTransaction();
                 Console.WriteLine("Информация о выданных купюрах:");
                 Console.WriteLine(transaction);
+
             }
-        
+
             Console.Read();
         }
     }
