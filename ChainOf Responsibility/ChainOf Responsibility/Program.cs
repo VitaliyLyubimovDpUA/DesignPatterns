@@ -15,7 +15,7 @@ namespace ChainOf_Responsibility
         INote JuniorNote { get; set; }
         CurrencyType Currency { get; set; }
         int Value { get; set; }
-
+        int TotalQuantity { get; set; }
     }
 
     class Note: INote
@@ -23,11 +23,13 @@ namespace ChainOf_Responsibility
         public INote JuniorNote { get; set; }
         public CurrencyType Currency { get; set; }
         public int Value { get; set; }
+        public int TotalQuantity { get; set; }
         public Note(CurrencyType currency, int value, INote seniorNote)
         {
             Currency = currency;
             Value = value;
             JuniorNote = seniorNote;
+            TotalQuantity = 1000;
         }
     }
 
@@ -37,10 +39,8 @@ namespace ChainOf_Responsibility
         /// INote - купюра
         /// int - количество купюр
         /// </summary>
-        private Dictionary<INote, int> currency = new Dictionary<INote, int>(); //купюры в банкомате
-        private readonly int maxNote = 500;             //самая большая купюра в банкомате
-        private readonly int minNote = 5;             //самая маленькая купюра в банкомате
-        private readonly int initionalQuantity = 1000;  //изначальное количество каждой из купюр
+        private INote maxNote;             //самая большая купюра в банкомате
+        private INote minNote;             //самая маленькая купюра в банкомате
         public ATM()
         {
 
@@ -53,36 +53,35 @@ namespace ChainOf_Responsibility
             INote note100 = new Note(CurrencyType.UAH, 100, note50);
             INote note200 = new Note(CurrencyType.UAH, 200, note100);
             INote note500 = new Note(CurrencyType.UAH, 500, note200);
-            
-            
-            currency.Add(note500, 0);
-            currency.Add(note200, initionalQuantity);
-            currency.Add(note100, initionalQuantity);
-            currency.Add(note50, initionalQuantity);
-            currency.Add(note20, initionalQuantity);
-            currency.Add(note10, initionalQuantity);
-            currency.Add(note5, 0);
+
+            minNote = note5;
+            maxNote = note500;
         }
         //Выдача наличных
         public bool CashWithdrawal(int money)
         {
             //Выбор наибольшей доступной купюры, которая есть в наличии
-            var pair = currency.Where(item => item.Key.Value <= money && item.Value > 0).FirstOrDefault();
-            int total = money;
+           
 
-            if (total < minNote || pair.Key is null) return false;
 
-            while(total != 0)
-            {
-                if (pair.Key.Value == minNote && pair.Value == 0) break;
-                if (pair.Value > 0 && total > pair.Key.Value)
-                {
-                    total -= pair.Key.Value;
-                    currency[pair.Key] = pair.Value - 1;
-                    pair = currency.Where(item => item.Key.Value == pair.Key.Value).First();
-                }
-                else CashWithdrawal(total);
-            }
+            //while (total != 0 || (pair.Key.Value != minNote && pair.Value != 0))
+            //{
+            //    if (pair.Key.Value == minNote && pair.Value == 0) break;
+            //    if (pair.Value > 0 && total > pair.Key.Value)
+            //    {
+            //        total -= pair.Key.Value;
+            //        currency[pair.Key] = pair.Value - 1;
+            //        pair = currency.Where(item => item.Key.Value == pair.Key.Value).First();
+            //    }
+            //    else {
+            //        if (pair.Key.JuniorNote != null)
+            //            pair = currency.Where(item => item.Key.Value == pair.Key.JuniorNote.Value).First();
+            //        else
+            //            return false;
+            //    }
+            //}
+
+
             return true;
         }
     }
